@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>VisualInventory</AssemblyName>
+    <RootNamespace>VisualInventory</RootNamespace>
+    <Version>3.0.3</Version>
+    <AssemblyVersion>3.0.3.0</AssemblyVersion>
+    <FileVersion>3.0.3.0</FileVersion>
+    <Company>NOVOSA</Company>
+    <Product>Visual Inventory</Product>
+    <Description>View-only visual inventory of one Library folder. Reads only; writes nothing.</Description>
+    <ApplicationIcon>Assets\VisualInventory.ico</ApplicationIcon>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <DebugType>none</DebugType>
+    <!-- Only ever use the runtime bundled in the "Runtime" folder next to the app.
+         No fallback to environment variables or a machine-wide install. -->
+    <AppHostDotNetSearch>AppRelative</AppHostDotNetSearch>
+    <AppHostRelativeDotNet>Runtime</AppHostRelativeDotNet>
+  </PropertyGroup>
+
+  <!-- Side Eye Series build: dotnet publish ... -p:Brand=SideEye
+       Uses the Side Eye icon and shows the Side Eye logo at the top of the sidebar.
+       The logo is built into the app; it is not read from any file at run time.
+       Without -p:Brand=SideEye you get the generic build (pink icon, pink sidebar badge). -->
+  <PropertyGroup Condition="'$(Brand)' == 'SideEye'">
+    <ApplicationIcon>Assets\SideEye.ico</ApplicationIcon>
+    <DefineConstants>$(DefineConstants);SIDEEYE</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(Brand)' == 'SideEye'">
+    <Resource Include="Assets\SideEyeLogo.png" />
+  </ItemGroup>
+</Project>

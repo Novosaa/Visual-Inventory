@@ -1,0 +1,307 @@
+VISUAL INVENTORY — ACTION LOG
+Written step by step while the work is done. Times are the build machine's clock (UTC).
+Earlier versions (2.0.0, 2.0.1) were made before this log was started; they are not logged here.
+
+==== v2.0.2 ====
+
+2026-10-13 02:42  Request received (with screenshots of v2.0.0 running):
+    1. Remove the "+ New category" section at the bottom of the left sidebar
+       and let the folder list reach the bottom.
+    2. The scroll bars are big and ugly.
+2026-10-13 02:42  Starting point: v2.0.1 source (v2.0.0 plus: old-app status import removed,
+    drag-and-drop no longer asks for confirmation). The user tested v2.0.0, not v2.0.1.
+2026-10-13 02:42  MainWindow.xaml: removed the bottom sidebar section (divider line,
+    "+ New category" button, "Local files only · no network" text). The folder list
+    (scrolling area) now fills the sidebar to the bottom, with a 12px bottom margin.
+    New categories can still be made by right-clicking a category, or the Overview
+    background, or with the "New category" button shown when the Library is empty.
+2026-10-13 02:43  App.xaml: added one app-wide scroll bar style. Scroll bars are now 8px wide,
+    with no arrow buttons and a slim rounded grey handle that darkens on hover/drag.
+    Clicking the empty part of the bar still pages up/down. Applies to every
+    scrolling area (sidebar, tiles, details panel, overview, drop-down lists).
+2026-10-13 02:43  Version set to 2.0.2 (project file and the sidebar label).
+2026-10-13 02:43  Built offline (SDK 10.0.401, local packages only): 0 errors, 0 warnings.
+2026-10-13 02:43  File-handling tests: VISUAL INVENTORY TESTS: PASS.
+2026-10-13 02:43  Checked every screen resource is defined before it is used: none missing.
+    NOT checked: how it looks. The window cannot be opened on this build machine (Linux);
+    the user's screenshot is the visual check.
+2026-10-13 02:43  READ ME FIRST.txt: version text set to v2.0.2; added "Updating a project you already use" (replace the four app files only).
+2026-10-13 02:44  Packaged: app files, SET UP RUNTIME.bat (unchanged), empty Library and Runtime folders, Source, DOCUMENTATION\ACTION-LOG.txt, CHECKSUMS-SHA256.txt. Runtime not included (30 MB send limit). Zip tested: no errors.
+
+==== v2.1.0 ====
+
+2026-10-13 05:02  Request received (screenshots of v2.0.2 running):
+    - Too much wasted space; things placed awkwardly.
+    - Remove the "Not started" label and the check boxes. Interpreted as the whole status
+      system (tile label, STATUS drop-down, filter, Overview counts, "Next items",
+      "Set status" menu). Stated to the user before starting; user did not object.
+    - Right panel: more info about the clicked file (dates, size, type etc.).
+      User clarified: no info needed for folders.
+    - Right panel: optional notes and a tick-off to-do list per file, hidden until added.
+2026-10-13 05:02  Plan confirmed with the user before any code was changed.
+2026-10-13 05:02  Models/WorkspaceModels.cs: removed the status system (Statuses, Status,
+    NeedsAttention, status colours, ready/to-do counts on categories, saved status records).
+    Added per-item: your note, your to-do list (each item: text + done), and "open" flags so
+    each only shows after you add it. Added the saved form of notes/to-do lists (NotesState).
+    Removed the "folder readme note" field (folders' own note files were shown as notes;
+    replaced by your own notes).
+2026-10-13 05:02  Services/ProjectScanner.cs: removed reading folders' own note/readme files and the per-category status counts. How items are found and pictured is unchanged.
+2026-10-13 05:02  Services/ProjectPaths.cs + StateStore.cs: statuses.json replaced by notes.json
+    (+ notes.backup.json) in Inventory Data. Same protections as before: backup kept on every
+    save, a damaged file is set aside (not overwritten) and the backup is used. Notes follow
+    an item when it is moved or its category is renamed in the app. An item with an empty
+    note and no to-do items is not stored. An existing statuses.json is no longer read and
+    is NOT deleted.
+2026-10-13 05:03  Views/FileDetails.cs (new): for the clicked file only: type, size, date created,
+    date modified, location, and pixel dimensions for JPG/PNG/BMP/GIF (read from the picture's
+    own header by the app; nothing is handed to Windows or other programs). Not shown for folders.
+2026-10-13 05:05  MainWindow.xaml rewritten below the sidebar (sidebar kept as in v2.0.2; label now v2.1.0):
+    - Top bar: status filter drop-down removed.
+    - Overview: removed the Items/Ready/Still-to-do boxes and "Next items to deal with".
+      Category cards show the item count only and are a little shorter.
+    - Tiles: status label removed; hover file-name pop-up removed; empty space under the
+      text removed (text area fixed at 76px so rows stay even). Tile width and picture
+      height now come from the window (see UpdateTileSize) so tiles fill the row.
+    - Right panel: picture box sizes to the image (max 380px tall) instead of a fixed
+      300px box; STATUS removed; new file details (type, size, dimensions, created,
+      modified, location; files only); NOTE box and TO-DO list, each hidden until
+      "+ Add note" / "+ Add to-do list" is clicked or something is saved.
+2026-10-13 05:05  App.xaml: added show/hide converters used by the note and to-do sections.
+    Views/InverseVisibilityConverter.cs (new): hides the "+ Add" links once a section is open.
+2026-10-13 05:07  MainWindow.xaml.cs rewritten to match:
+    - Status code removed (saving statuses, filter, Overview counts, "Set status" menu).
+    - Tile sizing: columns = as many 238px tiles as fit; each tile then stretched to fill
+      the row (never smaller than 238px). Picture height keeps the old 150:238 shape.
+      Recalculated when the window/panel is resized or a category is opened.
+    - Clicking a file reads its details (FileDetails); folders show none.
+    - Notes: "+ Add note" opens a box; saved 0.7 s after typing stops, and on leaving the
+      box, moving, renaming, refreshing and closing. Emptying the box (or "Remove") hides it.
+    - To-do: "+ Add to-do list" opens it; type + Enter (or Add) adds an item; tick to mark
+      done (shown struck through); × removes; removing the last item hides the list.
+    - An opened but empty note/list closes again when you click another file.
+    - Right-click empty tile area now also has "New category…" (it lost its sidebar button in v2.0.2).
+      [Not requested; small, noted here so it can be reverted if unwanted.]
+2026-10-13 05:07  Reverted the unrequested "New category…" entry in the tile-area right-click menu (categories can already be made by right-clicking a category or the Overview).
+2026-10-13 05:08  Tests updated: status tests replaced with notes/to-do tests (hidden until added;
+    saved; only non-empty saved; ticks kept; follow the item on move and category rename;
+    clearing removes the saved entry; damaged notes file set aside and backup used).
+    Result: VISUAL INVENTORY TESTS: PASS. App build: 0 errors, 0 warnings.
+2026-10-13 05:08  Checked: every screen resource defined before use; every binding has a matching property; every event handler exists; no status code left. (One false alarm from the checker, AllowDrop="True", confirmed harmless.)
+2026-10-13 05:08  READ ME FIRST.txt updated for v2.1.0: status mentions removed; added file details, a NOTES AND TO-DO LISTS section (incl. that notes don't follow files renamed/moved in Explorer).
+2026-10-13 05:09  Packaged v2.1.0 (app files, SET UP RUNTIME.bat unchanged, Source, READ ME FIRST, this log, checksums). Runtime not included (send size limit).
+
+==== v2.1.1 ====
+
+2026-10-13 05:41  Request: the app should not open files in other programs (keep it isolated to its
+    own folder). Keep: copy file name/path, Add files, Add folder, drag-and-drop.
+    Remove: double-click opening files. Interpreted as removing every way of opening a file
+    in another program (double-click, Open button, Enter key, right-click "Open"); stated to
+    the user before starting. "Show in Explorer" kept (shows the file's location, does not
+    open the file) - not mentioned by the user either way.
+2026-10-13 05:42  Removed every way of opening a file in another program:
+    - MainWindow.xaml: Open button removed from the right panel; double-click removed from tiles.
+    - MainWindow.xaml.cs: removed the double-click handler, Open button handler, Enter-to-open,
+      right-click "Open", and the code that handed files to Windows to open (OpenSafely).
+    - Services/FileOpenPolicy.cs deleted (only existed to decide what Open could open).
+    - Tests: removed the checks for FileOpenPolicy.
+    Remaining program start: "Show in Explorer" only (starts explorer.exe pointed at the file
+    or folder; it does not open the file). Copy name/path, Add files/folder, drag-and-drop unchanged.
+2026-10-13 05:42  MainWindow.xaml.cs: "Show in Explorer" now refuses any path outside the project folder
+    (it was only ever given Library/project paths; this makes that a rule).
+2026-10-13 05:42  Version set to 2.1.1 (project file and sidebar label).
+2026-10-13 05:42  Clean build: 0 errors, 0 warnings. Tests: VISUAL INVENTORY TESTS: PASS.
+    Checked the built app no longer contains the open-file code; every remaining button/handler
+    exists; the only program start left is explorer.exe inside "Show in Explorer".
+2026-10-13 05:42  READ ME FIRST.txt updated for v2.1.1 (open/double-click/Enter mentions removed; safety rule rewritten).
+2026-10-13 05:43  Packaged v2.1.1 (same layout as v2.1.0). Runtime not included (send size limit).
+
+==== v3.0.0 ====
+
+2026-10-15 09:47  2.1.1 put on hold by the user; its source saved unchanged (separate copy) before any edits.
+2026-10-15 09:47  Request: redo as a look-only Visual Inventory. Its only job is to show what is in the
+    folder it is given. Folders inside it = categories in the sidebar; pictures/files shown next to it.
+    Keep (and improve) the look. It must not open, move, rename, copy, add or delete anything.
+    User decisions: no sandbox for now; no writing anywhere (no notes/to-do, no saved settings,
+    no window-size memory, no logs) - "it shouldn't be keeping track of itself".
+    Plan (stated to the user before starting): reads only the Library folder next to the app;
+    sidebar highlights the current category; tidier right panel with file details; an automatic
+    check that fails if the code contains anything able to write, move, delete, open, start a
+    program, use the clipboard or the internet.
+2026-10-15 09:47  Deleted whole files that only existed to change things:
+    Services/LibraryService.cs (create/rename categories, copy in, move items),
+    Services/ActivityLog.cs (wrote the activity log), Services/StateStore.cs (saved notes,
+    settings, window size), Views/TextPrompt.cs (name-entry box for new/renamed categories),
+    Views/InverseVisibilityConverter.cs (only used by the notes section).
+2026-10-15 09:47  ProjectPaths.cs rewritten: only the project folder and its Library (read only); removed the
+    Inventory Data paths (notes, settings, window, logs). Project name = the project folder's name.
+2026-10-15 09:47  WorkspaceModels.cs rewritten: removed notes, to-do lists, saved-state classes, item IDs and
+    settings. Added IsCurrent (sidebar highlight) and IsLooseFiles ("Unsorted") to categories.
+2026-10-15 09:47  App.xaml.cs: errors now only show a message; the error-log file writing was removed.
+2026-10-15 09:47  User confirmed (mid-work): the window must open at the right size and never half off the screen.
+    Kept as before: on every start it measures the screen's usable area and fits/centres the window
+    in it. No size is remembered, so nothing is saved.
+2026-10-15 09:48  ProjectScanner.cs rewritten as a pure reader: removed item IDs (only used to attach notes) and the total-files count. How categories, items, pictures and hidden names are found is unchanged.
+2026-10-15 09:49  User asked whether apps normally log/report themselves. Answered: many keep local logs/settings, some send telemetry; 3.0.0 does neither. Clarified this ACTION-LOG is the builder's record (documentation), not written by the app.
+2026-10-15 09:52  User noted most logs they see come from other parts (bundled tools, Windows). Answered: the app
+    and its bundled runtime write nothing; Windows itself keeps its own records about any program.
+2026-10-15 09:52  MainWindow.xaml rewritten as a viewer:
+    - Removed: Add files, Add folder, drag-and-drop, all right-click menus, Show in Explorer,
+      Move to category, notes, to-do list, "Create Library folder" and "New category" buttons,
+      project rename. The app no longer accepts dropped files at all.
+    - Sidebar: the category you're in (or Overview) now has a pink bar and lighter background.
+    - Kept: tiles that fill the width, search, Refresh, Hide details, the picture-first right panel
+      with type/size/dimensions/created/modified/location (files only), thin scroll bars.
+    - Missing/empty Library screens now just explain what to do in Explorer, with a Refresh button.
+2026-10-15 09:52  App.xaml: removed the converter that belonged to the notes section.
+2026-10-15 09:52  User pointed out the "file changed since read" warnings. Checked: read App.xaml in full; file
+    times of every source file match my own edits (09:47-09:52 UTC); no other process was running.
+    Cause: I had changed those files with shell commands, which the editing tool doesn't see, so it
+    warned that its last view was out of date. Contents confirmed as intended (MainWindow.xaml and
+    ProjectScanner.cs contain none of the removed features). Next: MainWindow.xaml.cs (still the old version).
+2026-10-16 03:31  Work resumed on 3.0.0 after a pause (user is using 2.1.1 meanwhile). Rule from here: every
+    file is read in full before it is changed, and the log says so. No self-run reviewer (the user
+    rejected a check run by the same AI that did the work).
+2026-10-16 03:32  Read MainWindow.xaml.cs in full (765 lines; still the 2.1.1 code). Rewrote it as a viewer:
+    reads the Library, shows Overview/categories/tiles/details, search, refresh, F5/Ctrl+F/Esc,
+    hide/show details (this run only), sidebar highlight. Removed every part that saved notes,
+    settings or window size, copied/moved/renamed files, made categories, wrote logs, started
+    Explorer, used the clipboard, file pickers or drag-and-drop. Window fits the screen every start.
+2026-10-16 03:32  Read in full: Views/FileDetails.cs (67 lines), Views/ThumbnailConverter.cs (56), GlobalUsings.cs (1),
+    the test project file (14) and tests/Program.cs (144), and the app project file (25).
+    FileDetails and ThumbnailConverter only open files for reading (FileAccess.Read) - unchanged.
+    tests/Program.cs still tested 2.1.1 (copying, moving, notes saving); it will be replaced.
+2026-10-16 03:33  VisualInventory.csproj (read in full above): version 3.0.0; description now says view-only.
+2026-10-16 03:33  tests/Program.cs replaced (old one read in full above). New tests:
+    1. reader: categories, hidden names skipped, Unsorted, pictures vs type labels (PNG/PDF/JS),
+       folder items, linked folders skipped, locations;
+    2. reading changes nothing: every file/folder fingerprinted before and after - must match;
+       no "Inventory Data" folder created;
+    3. isolation check: scans every .cs/.xaml/.csproj of the app for 14 kinds of forbidden code
+       (writing/copying/moving/deleting files or folders, write-mode file access, writers,
+       starting programs, clipboard, file pickers, internet, registry, other system folders,
+       direct Windows calls, saving anything, accepting dropped files). It first proves it
+       catches 10 known-bad lines and doesn't flag 6 known read-only lines.
+2026-10-16 03:34  First run. App build: 0 errors, 0 warnings. Tests: FAIL - both failures were in the isolation
+    check itself, not the app:
+    (a) its self-test showed it MISSED a known-bad line, File.WriteAllText: the pattern only matched
+        the bare word "Write", not names that continue (WriteAllText). A real gap - must fix.
+    (b) false alarm on ProjectScanner.cs line 120: text tidying uses string .Replace(...), which the
+        "FileInfo .Replace(" pattern also matched.
+    Also noted: during the build, the .NET build tool tried 12 times to reach api.nuget.org; the
+    workspace's filter refused all of them and the build used only the local packages. This was
+    the build tool, not the app.
+2026-10-16 03:34  Fixed the isolation check: File.* rule now catches names that continue (WriteAllText,
+    AppendAllText, CopyTo...); removed .Replace( from the FileInfo rule (false alarm on text tidying).
+    MY MISTAKE, caught on rereading before running: I first wrote a code comment claiming
+    FileInfo.Replace was "covered by the rule below" - it isn't - and added ".Create(" which would
+    wrongly flag the read-only BitmapDecoder.Create. Both corrected before the run. The comment now
+    states the KNOWN GAP: FileInfo.Replace(...) can't be told apart from text .Replace(...), so the
+    check doesn't look for it (File.Replace is still caught). Self-test widened to 18 known-bad lines.
+2026-10-16 03:35  Second run. App build: 0 errors, 0 warnings. Tests: VISUAL INVENTORY 3.0.0 TESTS: PASS.
+    Isolation check: 11 app files checked, 14 kinds of forbidden code looked for, 0 found.
+2026-10-16 03:37  Proof the isolation check catches real code: ran it on the saved 2.1.1 source (which does
+    write, copy and move). It FAILED as it should, with 30 hits: 10 file writes/copies/moves/deletes,
+    10 folder creates/moves/deletes, 3 saving, 2 starting programs (Show in Explorer), 2 file pickers,
+    1 clipboard, 1 registry, 1 accepting dropped files. Note: this is my own check of my own work,
+    not independent proof.
+2026-10-16 03:40  Read MainWindow.xaml (378 lines) and MainWindow.xaml.cs (296 lines) in full again and checked:
+    every screen resource is defined before use; every binding names a property that exists
+    (window, category, item and file-details properties); every click/key/resize handler exists.
+    One harmless leftover noted, not changed: the Overview sidebar button also carries the
+    category highlight rule, which looks for a value the window doesn't have. It just doesn't
+    apply there; it can't change anything.
+2026-10-16 03:41  Searched the built app (VisualInventory.dll) for text: "v3.0.0 · view only", "No Library folder
+    found" and "Your categories" are present; "Add files", "Inventory Data", "Add note", "to-do",
+    "Show in Explorer", "explorer.exe", "notes.json", "Move to", "New category", "AllowDrop" are
+    all absent.
+2026-10-16 03:44  Read the 2.1.1 READ ME FIRST.txt (129 lines), BUILD.txt (27) and SET UP RUNTIME.bat (79) in full.
+    Wrote a new READ ME FIRST.txt for 3.0.0: what it does / does not do, updating from 2.1.1
+    (copy the 4 app files; old Inventory Data no longer used - keep or delete), new setup,
+    a plain version list, how it was checked (and that I checked my own work), the known gap.
+    Checked my read-me claim that the app's only "Replace" is tidying names into titles:
+    true (ProjectScanner.cs line 120, the only one). New BUILD.txt with the 3.0.0 test command.
+    SET UP RUNTIME.bat: unchanged.
+2026-10-16 03:48  Packaged v3.0.0: Starter Project (the 4 app files from the tested build, SET UP RUNTIME.bat
+    byte-for-byte the same as 2.1.1's, empty Library and Runtime folders), Source (src + tests,
+    no build output), READ ME FIRST, this log, CHECKSUMS-SHA256.txt. Runtime not included (send
+    size limit). Small slip: the copy tool I first used (rsync) isn't on this machine, so the
+    Source folder came out empty; caught on the file listing, re-copied with tar, listing checked.
+    Zip tested: no errors; checksums verified. This entry was added after zipping, so the zip
+    was rebuilt once more to include it.
+
+==== v3.0.1 ====
+
+2026-10-16 22:52  User reports: 3.0.0 doesn't launch; it says .NET needs to be installed.
+2026-10-16 22:52  Cause found - MY MISTAKE in packaging: the 3.0.0 VisualInventory.exe does not contain the
+    "Runtime" folder instruction (2.1.1's does). I published correctly (into vi-out, whose exe has it),
+    but the packaging step copied the four app files from the ordinary BUILD folder
+    (bin/Release/net10.0-windows/win-x64) instead of the PUBLISH output. The setting that makes the
+    launcher look only in its Runtime folder is applied at publish, so the packaged exe looked for
+    .NET installed on Windows, found none, and stopped. My checks before sending looked at the DLL
+    and the source, never at the exe. The app code itself is unchanged and fine.
+    Fix: rebuild as 3.0.1 (same code; version number only), package from the publish output,
+    and check the exe for the Runtime instruction before sending.
+2026-10-16 22:53  Version set to 3.0.1: VisualInventory.csproj, sidebar label in MainWindow.xaml, and the
+    pass/fail line in tests/Program.cs (all three read in full earlier in this session; unchanged since).
+    No other code changed.
+2026-10-16 22:53  Clean publish to its own output folder: 0 errors. Checked: the published exe CONTAINS the
+    Runtime instruction; the exe in the ordinary build folder does NOT - confirming the cause above.
+    The DLL shows "v3.0.1 · view only".
+2026-10-16 22:54  Tests: VISUAL INVENTORY 3.0.1 TESTS: PASS; isolation check 0 found in 11 files.
+2026-10-16 22:55  READ ME FIRST.txt: v3.0.1 title, a note for anyone who tried 3.0.0, 3.0.1 in the version list.
+    BUILD.txt: v3.0.1, and a warning to package only from the publish output, never bin.
+2026-10-16 22:56  Packaged v3.0.1 from the PUBLISH output (same layout as 3.0.0). New check added: the exe
+    INSIDE the package is inspected for the Runtime instruction - it has it. No build config file left
+    in Source. Runtime not included (send size limit). Zip tested and checksums verified after this entry.
+
+==== v3.0.2 ====
+
+2026-10-17 00:05  User reports (screenshot of 3.0.1 running - it launches now): the image grid still isn't
+    fixed. Screenshot shows ONE tile per row with a large empty area to the right.
+2026-10-17 00:05  Cause - MY MISTAKE, present since 2.1.0 (UpdateTileSize in MainWindow.xaml.cs): the width
+    was worked out as if the last tile in a row had no 16px gap after it, but the layout (WrapPanel)
+    counts every tile's gap. So tiles came out slightly too wide for the planned number of columns
+    and one always wrapped to the next row. Checked the maths for every width 300-2600px: old formula
+    wraps at 2048 of them; corrected formula at none. Example at the screenshot's size: planned 2
+    columns of 357 wide, which needs 746 but only 734 is available -> 1 per row.
+2026-10-17 00:07  MainWindow.xaml.cs UpdateTileSize (file read in full earlier this session; only the label
+    line in MainWindow.xaml changed since): columns = available / (238 + 16); width = available /
+    columns - 16, so a row always fits. Rounding slack 2px. Comment in the code explains it.
+    Version 3.0.2 (csproj, sidebar label, test pass line). READ ME + BUILD.txt updated.
+2026-10-17 00:08  Clean publish: 0 errors. Tests: 3.0.2 PASS, isolation check 0 found. Published exe has the
+    Runtime instruction. NOT checked here: how it looks (cannot open a window on this machine) - the
+    user's screenshot is the check.
+2026-10-17 00:09  Packaged v3.0.2 from the publish output; packaged exe checked for the Runtime instruction;
+    zip tested and checksums verified. Runtime not included (send size limit).
+2026-10-18  User screenshot of 3.0.2 running: tiles now 2 per row, filling the width. Grid fix confirmed by the user.
+
+==== v3.0.3 ====
+
+2026-10-18 01:10  Request: replace the eye icon (exe / title bar / taskbar). Two versions: Side Eye Series
+    (user's own logo) and generic. User decisions: the sidebar's pink square stays in the generic
+    version; in the Side Eye version the logo replaces the pink square too. Logo must NOT be cropped
+    ("if it doesn't fit the whole pic don't use it") - my first attempts cropped her face; dropped.
+2026-10-18 01:10  User's logo PNG checked: already has a see-through background (37% fully clear); the gold
+    seen in the chat preview is only how the chat shows clear areas. Used unchanged.
+2026-10-18 01:11  Icons made (6 sizes each, 16-256px): Side Eye = the whole logo fitted into the square with
+    clear space above/below; generic = pink rounded square + dark ring and dot, matching the sidebar
+    badge. Preview at real sizes sent to the user and accepted. Noted to user: the wide logo is
+    small/unreadable at 16-32px (taskbar), unavoidable without cropping.
+2026-10-18 01:11  Plan: one source, two builds. Default build = generic icon. Building with -p:Brand=SideEye
+    uses the Side Eye icon and shows the logo (built into the app, not read from a file) as a banner
+    at the top of the sidebar, with the pink square hidden; the name/version text stays below it.
+2026-10-18 01:20  Files read before editing: csproj (in full), MainWindow.xaml sidebar section and MainWindow.xaml.cs
+    top half (rest unchanged since full reads earlier). Changes: Assets\VisualInventory.ico replaced with the
+    generic pink icon; added Assets\SideEye.ico and Assets\SideEyeLogo.png (byte-identical to the user's
+    upload); csproj Brand=SideEye switch; MainWindow.xaml logo Image + names on badge parts, label v3.0.3;
+    MainWindow.xaml.cs ApplyBrand(); test pass line 3.0.3.
+2026-10-18 01:22  Both builds published, 0 errors. Tests 3.0.3 PASS, isolation 0 found. Checked: generic exe has the
+    generic icon and no logo; Side Eye exe has the Side Eye icon and its DLL contains the logo; both exes
+    have the Runtime instruction. Not packaged yet - user asked why the logo is built in this way.
+2026-10-18 01:35  User asked how to see what settings were set during the build. Rebuilt both versions with the build
+    tool's full detail log (-v:diag); outputs byte-identical to the builds being packaged. Also listed the final
+    value of every app-affecting setting. Logs checked for secrets: none. Sent to the user as Build-settings-3.0.3.zip.
+    The two builds differ only in ApplicationIcon and DefineConstants (SIDEEYE).
+2026-10-21 02:00  User (after a pause): wants the latest version, plus a hand-off for continuing work in a new thread,
+    covering both lines: 3.0.x (view only) and 2.1.x (the older one that adds/copies/moves, notes, to-do).
+    User has decided to keep BOTH apps. Packaging 3.0.3 now (both versions, logo built in, as built).

@@ -1,0 +1,39 @@
+VISUAL INVENTORY v3.0.3 — SOURCE
+
+C# / .NET 10 (LTS) / WPF, target net10.0-windows, Windows x64. View only.
+
+  src\VisualInventory\                 the app
+    Services\  ProjectPaths, ProjectScanner  (read only; no screen code; tested on any OS)
+    Models\    WorkspaceModels
+    Views\     ThumbnailConverter, FileDetails  (open files for reading only)
+    MainWindow.xaml(.cs), App.xaml(.cs)
+  tests\VisualInventory.Tests\         reader tests, "reading changes nothing" test,
+                                       and the isolation check (console program)
+
+Built offline with:
+  .NET SDK 10.0.401 (linux-x64)
+  Microsoft.WindowsDesktop.App.Ref 10.0.12 and Microsoft.NETCore.App.Host.win-x64 10.0.12
+  (local package folder only; no online package source)
+
+  dotnet publish src/VisualInventory/VisualInventory.csproj -c Release -r win-x64 --self-contained false -p:NuGetAudit=false
+  dotnet build tests/VisualInventory.Tests -c Release
+  dotnet VisualInventory.Tests.dll <empty temp folder> <path to src/VisualInventory>
+      -> VISUAL INVENTORY 3.0.3 TESTS: PASS
+
+  Side Eye Series version: add  -p:Brand=SideEye  to the publish command. That uses
+  Assets\SideEye.ico and builds Assets\SideEyeLogo.png into the app for the sidebar.
+  Without it you get the generic version (Assets\VisualInventory.ico, pink badge).
+  (The test makes its own throwaway Library inside the temp folder. The second path is
+   the app's source, which the isolation check searches for forbidden code.)
+
+IMPORTANT: package from the PUBLISH output (add -o <folder> to the publish command), never from
+bin\Release\...\win-x64. The exe in bin is made by the ordinary build and does NOT contain the
+"look only in Runtime" instruction, so it asks for .NET to be installed (the 3.0.0 mistake).
+
+Package: copy the publish output (exe, dll, deps.json, runtimeconfig.json) into a project
+folder, plus a Runtime folder made by extracting Microsoft's
+dotnet-runtime-10.0.x-win-x64.zip and windowsdesktop-runtime-10.0.x-win-x64.zip into it.
+The launcher only looks in that Runtime folder (AppHostDotNetSearch=AppRelative).
+
+To update the runtime later: extract the newer two zips into Runtime and delete the
+older version folders under Runtime\host\fxr and Runtime\shared\*.

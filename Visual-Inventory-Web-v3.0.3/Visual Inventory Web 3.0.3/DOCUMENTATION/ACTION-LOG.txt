@@ -1,0 +1,33 @@
+VISUAL INVENTORY (WEB) - ACTION LOG
+
+web 3.0.3 - 22 Oct 2026 - first web version
+Made from the desktop 3.0.3 source (view only). Desktop app files were not changed.
+
+Carried over from desktop 3.0.3 (same code, small changes noted):
+  - ProjectScanner.cs: same rules. Change: paths inside Library use forward slashes.
+  - WorkspaceModels.cs: same. Removed the WPF-only selection plumbing.
+  - FileDetails.cs: same facts. Picture dimensions now read from the file header
+    directly (the WPF picture reader doesn't exist on a web server). PNG, GIF, BMP, JPEG.
+  - Page layout and colours match MainWindow.xaml: 224px sidebar, pink current bar,
+    Overview cards, tiles never narrower than 238px and stretched to fill the row,
+    picture area 238:150, 340px details panel (drag 260-700), Hide details.
+New for the web:
+  - Settings in appsettings.json (name, brand, library path, time zone).
+  - Side Eye brand via "Brand": "SideEye" (logo uncropped, same as desktop Side Eye build).
+  - Library read is kept for 20 seconds between clicks; Refresh re-reads straight away.
+  - Only GET/HEAD allowed; strict browser safety headers; no cookies; no sign-in.
+  - Pictures only sent from inside Library, never through links, never hidden files,
+    never non-picture files.
+  - Phone layout: categories across the top, details under the tiles.
+
+Checked (on a test Library, built with the .NET 10.0.401 SDK, run, viewed in Chromium):
+  - Overview counts, categories, Unsorted for loose files, empty category, hidden files skipped.
+  - Category tiles, folder tile (picture from inside, file count), selection, details facts
+    and dimensions for PNG/JPEG/GIF/BMP, PDF shows type label.
+  - Search as you type and via the search box; Ctrl+F; Hide/Show details.
+  - Refused: ../../etc/passwd, /etc/passwd, a link pointing outside, a folder link,
+    a PDF, a hidden file, backslash tricks (all 404); POST/PUT (405).
+  - No Library connected: shows "No Library folder found".
+  - Phone width 390px: no sideways scrolling.
+  - No browser console errors.
+Not checked here: the Docker build itself and Cloud Run (no access to Google from here).

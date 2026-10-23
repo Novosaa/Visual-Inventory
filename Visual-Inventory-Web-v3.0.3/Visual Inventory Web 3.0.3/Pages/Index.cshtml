@@ -1,0 +1,202 @@
+@page "/"
+@model IndexModel
+@{
+    var s = Model.Settings;
+    var title = Model.IsOverview ? $"{s.ProjectName} — Visual Inventory" : $"{Model.PageTitle} — {s.ProjectName}";
+}
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>@title</title>
+    <link rel="icon" href="@(s.IsSideEye ? "/favicon-sideeye.ico" : "/favicon.ico")" />
+    <link rel="stylesheet" href="/site.css?v=3.0.3" />
+    <script src="/site.js?v=3.0.3" defer></script>
+</head>
+<body>
+<div class="app">
+
+    <!-- LEFT SIDEBAR: the project name, then every category (folder inside Library). -->
+    <aside class="sidebar">
+        @if (s.IsSideEye)
+        {
+            <img class="brand-logo" src="/sideeye-logo.png" alt="Side Eye Series" />
+        }
+        <div class="name-row@(s.IsSideEye ? " no-badge" : "")">
+            @if (!s.IsSideEye)
+            {
+                <div class="badge" aria-hidden="true">◉</div>
+            }
+            <div class="name-block">
+                <div class="project-name">@s.ProjectName</div>
+                <div class="app-label">VISUAL INVENTORY</div>
+                <div class="version">v3.0.3 · view only</div>
+            </div>
+        </div>
+
+        <nav class="nav">
+            <div class="nav-heading">YOUR LIBRARY</div>
+            <a class="nav-link@(Model.IsOverview ? " current" : "")" href="@Model.OverviewUrl()">Overview</a>
+            @if (Model.Snapshot is not null)
+            {
+                foreach (var cat in Model.Snapshot.Sections)
+                {
+                    var isCurrent = Model.Current is not null && Model.Current.Name == cat.Name;
+                    <a class="nav-link@(isCurrent ? " current" : "")" href="@Model.CategoryUrl(cat.Name)" title="@cat.Name">@cat.Name</a>
+                }
+            }
+        </nav>
+    </aside>
+
+    <main class="main">
+        <!-- TOP BAR -->
+        <header class="topbar">
+            <div class="titles">
+                <h1>@Model.PageTitle</h1>
+                <div class="subtitle">@Model.PageSubtitle</div>
+            </div>
+            @if (!Model.IsOverview && !Model.MissingLibrary)
+            {
+                <form class="search" method="get" action="/" role="search">
+                    <input type="hidden" name="c" value="@Model.Current!.Name" />
+                    <input id="search" type="search" name="q" value="@Model.Query" placeholder="Search this category"
+                           title="Search this category (Ctrl+F)" autocomplete="off" />
+                </form>
+                <button type="button" class="quiet" id="details-toggle">Hide details</button>
+            }
+        </header>
+
+        @if (Model.MissingLibrary)
+        {
+            <!-- No Library connected -->
+            <div class="missing">
+                <div class="card">
+                    <div class="pink-bar"></div>
+                    <h2>No Library folder found</h2>
+                    <p>Visual Inventory shows the Library folder. Online, that's your storage bucket, connected to the app as read-only. Once it's connected, put your category folders in the bucket, then press Refresh.</p>
+                    <p class="path">@s.LibraryPath</p>
+                    <a class="quiet" href="/?refresh=1">Refresh</a>
+                </div>
+            </div>
+        }
+        else if (Model.IsOverview)
+        {
+            <!-- OVERVIEW: the categories. -->
+            <div class="overview">
+                <div class="overview-head">
+                    <div>
+                        <h2>Your categories</h2>
+                        <div class="muted">Each folder inside Library is a category.</div>
+                    </div>
+                    <div class="read-row">
+                        <span class="muted small">@Model.LastReadText</span>
+                        <a class="quiet" href="@Model.RefreshUrl()" title="Read the Library folder again">Refresh</a>
+                    </div>
+                </div>
+
+                @if (Model.Snapshot!.Sections.Count == 0)
+                {
+                    <div class="empty">
+                        <strong>Your Library is empty</strong>
+                        <div class="muted">Put folders (your categories) and files into the Library, then press Refresh.</div>
+                    </div>
+                }
+
+                <div class="category-cards">
+                    @foreach (var cat in Model.Snapshot.Sections)
+                    {
+                        <a class="category-card" href="@Model.CategoryUrl(cat.Name)">
+                            <span class="accent a-@cat.Accent.TrimStart('#')"></span>
+                            <span class="category-name">@cat.Name</span>
+                            <span class="muted small">@cat.CountText</span>
+                        </a>
+                    }
+                </div>
+            </div>
+        }
+        else
+        {
+            <!-- CATEGORY VIEW -->
+            <div class="section-view" id="section-view">
+                <div class="items">
+                    <div class="count-row">
+                        <span class="muted small" id="visible-count">@Model.VisibleCountText</span>
+                        <a class="refresh-link small" href="@Model.RefreshUrl()" title="Read the Library folder again">Refresh</a>
+                    </div>
+                    <div class="tiles" id="tiles">
+                        @foreach (var item in Model.Visible)
+                        {
+                            var isSel = ReferenceEquals(item, Model.Selected);
+                            <a class="tile@(isSel ? " selected" : "")" href="@Model.ItemUrl(item)"
+                               data-search="@($"{item.Title}\n{item.FileName}\n{item.TypeLabel}".ToLowerInvariant())">
+                                <span class="pic">
+                                    @if (item.HasPreview)
+                                    {
+                                        <img src="@IndexModel.PictureUrl(item.PreviewRelativePath!)" alt="" loading="lazy" decoding="async" />
+                                    }
+                                    else
+                                    {
+                                        <span class="type-label">@item.TypeLabel</span>
+                                    }
+                                </span>
+                                <span class="tile-text">
+                                    <span class="tile-title">@item.Title</span>
+                                    <span class="muted small">@item.SubText</span>
+                                    <span class="muted small ellipsis">@item.FileName</span>
+                                </span>
+                            </a>
+                        }
+                    </div>
+                </div>
+
+                <div class="splitter" id="splitter" title="Drag to resize" aria-hidden="true"></div>
+
+                <!-- DETAILS PANEL: the picture first, then what the file is. -->
+                <aside class="details" id="details">
+                    @if (Model.Selected is null)
+                    {
+                        <div class="details-empty muted">Click a tile to see it here.</div>
+                    }
+                    else
+                    {
+                        var sel = Model.Selected;
+                        <div class="details-inner">
+                            <div class="big-pic">
+                                @if (sel.HasPreview)
+                                {
+                                    <img src="@IndexModel.PictureUrl(sel.PreviewRelativePath!)" alt="@sel.Title" />
+                                }
+                                else
+                                {
+                                    <span class="type-label">@sel.TypeLabel</span>
+                                }
+                            </div>
+                            <h2 class="details-title">@sel.Title</h2>
+                            <div class="muted small-12 wrap">@sel.FileName</div>
+                            <div class="muted small-12">@sel.SubText</div>
+
+                            @if (Model.SelectedDetails is { } d)
+                            {
+                                <dl class="facts">
+                                    <dt>Type</dt><dd>@d.Type</dd>
+                                    <dt>Size</dt><dd>@d.Size</dd>
+                                    @if (d.HasDimensions)
+                                    {
+                                        <dt>Dimensions</dt><dd>@d.Dimensions</dd>
+                                    }
+                                    <dt>Created</dt><dd>@d.Created</dd>
+                                    <dt>Modified</dt><dd>@d.Modified</dd>
+                                    <dt>Location</dt><dd class="muted">@d.Location</dd>
+                                </dl>
+                            }
+                        </div>
+                    }
+                </aside>
+            </div>
+        }
+    </main>
+</div>
+</body>
+</html>
