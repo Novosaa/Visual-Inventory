@@ -1,1 +1,139 @@
+VISUAL INVENTORY  v3.0.3  (view only)
+=====================================
+
+A picture view of what is in one folder. It only LOOKS. It doesn't change anything.
+
+
+WHAT IT DOES
+
+  - Shows the folder called Library that sits next to VisualInventory.exe.
+  - Each folder inside Library is a category in the left sidebar.
+    Files sitting loose at the top of Library show under "Unsorted".
+  - Click a category to see its pictures and files as tiles. Pictures show as
+    pictures; other files show their type (PDF, JS, HTML...).
+  - Click a tile to see it large on the right, with its type, size, dimensions
+    (pictures), the dates it was made and changed, and where it is in Library.
+    Folders show their picture and file count, but no details.
+  - The sidebar highlights the category you're in.
+  - Search box (top) searches the category you're in.
+  - Keys:  F5 read the Library again   Ctrl+F search   Esc clear search
+  - "Hide details" (top right) hides the right panel. Drag its edge to resize it.
+  - The window fits your screen and is centred every time it opens.
+
+
+WHAT IT DOES NOT DO
+
+  It has no code for any of these (they were removed, not just hidden):
+  - open files, or start any other program (not even Explorer)
+  - add, copy, move, rename or delete files or folders
+  - make or rename categories
+  - accept dragged-in files
+  - copy anything to the clipboard
+  - show "open file" / "save file" boxes
+  - save anything at all: no notes, no to-do lists, no settings, no window size,
+    no logs. It writes nothing, anywhere.
+  - read anything outside its own Library folder
+  - use the internet
+
+  To change what it shows: add, move or remove files in the Library folder
+  yourself in Explorer, then press F5 (or Refresh).
+
+
+WHAT'S IN THIS ZIP
+
+  Starter Project\   A ready project folder. Copy it for each project you want.
+  Source\            The code, for building future versions. You don't need to touch it.
+  DOCUMENTATION\     ACTION-LOG.txt: what was done while building, step by step.
+  CHECKSUMS-SHA256.txt   fingerprints of every file in this zip.
+
+
+IF YOU TRIED 3.0.0: its VisualInventory.exe was packaged wrongly and says .NET needs
+  to be installed. Throw away those four 3.0.0 app files and use the ones in this zip.
+
+
+UPDATING FROM 2.1.1 (the one you use now)
+
+  Copy these four files from the new Starter Project over the ones in your project folder:
+    VisualInventory.exe, VisualInventory.dll, VisualInventory.deps.json,
+    VisualInventory.runtimeconfig.json
+  Leave Runtime and Library as they are. No need to run SET UP RUNTIME.bat again.
+
+  Your old "Inventory Data" folder (notes, settings, logs from 2.x) is no longer
+  used by 3.0.x. It isn't read or changed. Keep it or delete it, your choice.
+  If you go back to 2.1.1 later, it will still be there for that version.
+
+
+NEW SETUP (only if you're starting fresh, without 2.1.1)
+
+  The runtime isn't in this zip, to keep it small.
+  1. Extract this zip to a normal folder (not inside the zip).
+  2. Put the two Microsoft zips into the "Starter Project" folder:
+       dotnet-runtime-10.0.12-win-x64.zip
+       windowsdesktop-runtime-10.0.12-win-x64.zip
+  3. Double-click "SET UP RUNTIME.bat" in Starter Project.
+     This is a separate setup tool, not part of the app. It checks both zips
+     against Microsoft's published checksums, stops if either doesn't match,
+     then unpacks them into the Runtime folder. It downloads nothing.
+     Afterwards you can delete the two zips (and the .bat too, if you like).
+  4. Put your category folders inside Library, then double-click VisualInventory.exe.
+
+
+WHAT'S INSIDE A PROJECT FOLDER
+
+  VisualInventory.exe   double-click this to open it
+  VisualInventory.dll   \
+  *.deps.json            > part of the app, leave them next to the .exe
+  *.runtimeconfig.json  /
+  Runtime\              the .NET 10.0.12 runtime the app runs on (from Microsoft).
+                        The app only ever uses this one.
+  Library\              YOUR FILES. Each folder in here is a category.
+  SET UP RUNTIME.bat    the one-time setup tool (see above)
+
+
+VERSIONS (the newest has the highest numbers; the first number goes up for big changes)
+
+  3.0.3  New icons. Comes in two versions: GENERIC (pink icon, pink badge in the sidebar)
+         and SIDE EYE SERIES (your logo as the icon and across the top of the sidebar).
+         The old eye icon is gone. Nothing else changed.
+  3.0.2  Tiles now fill each row properly. Since 2.1.0 a sizing mistake made one tile too
+         many per row, so it wrapped and rows showed fewer tiles with empty space beside them.
+  3.0.1  Same app as 3.0.0. Fixed the launcher, which was packaged wrongly in 3.0.0 and
+         asked for .NET to be installed instead of using the Runtime folder.
+  3.0.0  View only. Everything that could change, open, copy or save was removed.
+         Sidebar highlights the current category. Writes nothing anywhere.
+  2.1.1  Removed opening files in other programs.
+  2.1.0  Removed status labels and check boxes; tiles fill the width; file details;
+         optional notes and to-do lists.
+  2.0.2  Removed the sidebar's "New category" section; thin scroll bars.
+  2.0.1  Removed importing from the old app and the confirmation questions.
+  2.0.0  First generic version: one self-contained project folder; window fits the
+         screen; scrolling sidebar; right-click menus.
+  1.3.0  The original Side-Eye Visual Inventory.
+
+
+HOW IT WAS CHECKED (by the same AI that built it, so not independent proof)
+
+  - Tests build a throwaway test Library, read it, and check the categories, tiles
+    and types come out right.
+  - Every file and folder is fingerprinted before and after reading; they must match
+    exactly (reading changed nothing).
+  - The app's code is searched for 14 kinds of forbidden code (writing, copying,
+    moving, deleting, starting programs, clipboard, file boxes, internet, registry,
+    saving, dropped files, and more). 3.0.3: none found. As a control, the same
+    search on 2.1.1's code found 30.
+  - KNOWN GAP in that search: one way of replacing a file (FileInfo.Replace) looks
+    the same as ordinary text replacing, so the search can't tell them apart and
+    doesn't look for it. The app's only use of "Replace" is tidying file names
+    into titles.
+  - Not checked: how it looks. The build machine can't open the window, so your
+    screenshot is the check.
+
+
+IF SOMETHING GOES WRONG
+
+  - Error messages say what happened. Nothing is saved, so send a screenshot.
+  - Windows may warn that the app is from an unknown publisher (it isn't
+    code-signed). Choose "More info" then "Run anyway". If double-clicking does
+    nothing, right-click the downloaded zip > Properties > tick Unblock > OK,
+    then extract it again.
 # Visual-Inventory
