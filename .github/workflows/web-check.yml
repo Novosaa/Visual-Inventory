@@ -21,7 +21,7 @@ jobs:
       USER_NAME: tester
       PASSWORD: correct-horse-battery-staple
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Build (same Dockerfile Google uses)
         run: docker build -t visual-inventory "$APP"
@@ -115,4 +115,4 @@ jobs:
 
       - name: App log
         if: always()
-        run: docker logs vi; docker logs vi-unset
+        run: docker logs vi || true; docker logs vi-unset || true

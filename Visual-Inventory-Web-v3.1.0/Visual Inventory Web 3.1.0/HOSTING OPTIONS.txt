@@ -1,0 +1,137 @@
+WHERE VISUAL INVENTORY (WEB) COULD LIVE ONLINE
+=============================================
+Written 24 Oct 2026. Prices change; check each company's own pricing page before paying.
+
+What it needs, whichever place you choose:
+  1. Somewhere to RUN the app (it's a small C# / .NET 10 website, packaged with a Dockerfile).
+  2. Somewhere to KEEP your files (the Library), that you can upload to in a web browser.
+  3. Both done by clicking in a website - no terminal, no command line.
+  4. Its own simple sign-in page (version 3.1.0 has this). No "Sign in with Google",
+     no API keys, nothing that connects to other accounts.
+  5. Later: a way to let the app WRITE (uploads, editing pictures and templates),
+     switched on only when you're ready.
+
+
+THE SHORT ANSWER
+----------------
+Use Google Cloud (Cloud Run for the app + a Cloud Storage bucket for the files).
+The app was already built for it, it's all clicking, it's likely to cost very little
+for one person, and the "make it writable later" step is one tick-box.
+
+
+OPTION 1 - GOOGLE CLOUD: CLOUD RUN + CLOUD STORAGE   (recommended)
+---------------------------------------------------------------
+How it works: your files go in a Cloud Storage "bucket" (Google's online folders). The app
+runs on Cloud Run and is connected to the bucket READ-ONLY. You upload files by dragging
+them into the bucket in the Cloud Console website.
+
+  + Already set up for this: PUT IT ONLINE.txt is the step-by-step.
+  + All clicking: Cloud Console + Cloud Shell Editor's "Deploy to Cloud Run" button.
+  + The bucket stays private. Only the app can read it, and only you (signed in to your
+    Google account) can manage it.
+  + Read-only is enforced by Google, not just by the app: the bucket is connected
+    with "Read-only" ticked, so even a bug in the app couldn't change your files.
+  + Sydney region available (australia-southeast1).
+  + Grows with you: for uploads/editing later, untick "Read-only" and add those features
+    to the app. Same bucket, same address, same sign-in.
+  + Cost: Cloud Run has a monthly free allowance (CPU time and requests) and switches off
+    when nobody is using it. For one person browsing now and then it's usually inside the
+    free allowance. Storage is roughly a few US cents per GB per month. Expect cents to a
+    few dollars a month, mostly storage.
+  - Needs a Google Cloud account with a billing card attached (even if you're in the free amount).
+    Set a budget alert (Billing > Budgets & alerts) so you get an email if it costs more
+    than, say, $5.
+  - Google's console has a lot of buttons. The guide says exactly which ones.
+  - First open after a quiet spell takes a few seconds (the app wakes up).
+
+  Optional extra (still no terminal): instead of uploading the app through Cloud Shell
+  Editor, Cloud Run can rebuild it by itself whenever this GitHub repository changes
+  ("Continuously deploy from a repository"). That means giving Google Cloud access to
+  this GitHub repository, which you said you'd rather not do, so it's left out of the guide.
+  The Cloud Shell Editor way doesn't connect anything.
+
+
+OPTION 2 - MICROSOFT AZURE: APP SERVICE + AZURE STORAGE
+-------------------------------------------------------
+How it works: the same idea with Microsoft. Files go in Azure Storage (uploaded with the
+"Storage browser" in the Azure Portal); the app runs on App Service with the storage
+connected ("mounted") as a folder.
+
+  + .NET is Microsoft's own, so App Service runs it happily, with or without the Dockerfile.
+  + All clicking in the Azure Portal.
+  + Sydney / Melbourne regions.
+  - Connecting storage to the app needs a paid App Service plan (the free one is meant for
+    testing). That's roughly US$13+ a month whether or not anyone uses it, so it's
+    noticeably dearer than Google for a personal project.
+  - Read-only would rest mostly on the app itself plus storage permissions. There isn't the
+    same simple "Read-only" tick-box on the connection as Google has.
+  - Its built-in "Authentication" feature is Microsoft/Google sign-in (the OAuth kind) - don't
+    turn it on. Use the app's own sign-in page instead.
+  - The guide in this folder is for Google. Azure would need its own guide (I can write one).
+
+
+OPTION 3 - RENDER (or Railway): SIMPLE APP HOSTS
+------------------------------------------------
+How it works: they build the app from this GitHub repository and run it.
+
+  + The simplest websites of the lot for running an app.
+  - No good place for your files. Their "disks" can't be opened in a browser to upload
+    things, so you'd have to keep your files in the GitHub repository itself (GitHub's
+    website only takes files up to 25 MB each, and isn't meant to be a photo store).
+  - You have to connect them to your GitHub account to work at all.
+  - Free plans sleep; paid plans are about US$7+/month, plus the disk.
+  Verdict: fine for a demo, a poor fit for "cloud storage".
+
+
+OPTION 4 - A NAS AT HOME (e.g. Synology)
+----------------------------------------
+How it works: a small box with hard drives that sits at home. Its web screens let you
+store files and run apps like this one (Container Manager), and reach them from outside
+(Synology's QuickConnect).
+
+  + Your files on your own hardware; storage is cheap once bought.
+  + All clicking in the NAS's own web screens.
+  - You buy the box (a few hundred dollars plus drives) and look after it: updates,
+    backups, and it has to stay switched on.
+  - Opening a home device to the internet needs care.
+  Worth it only if you'd like your own storage box anyway.
+
+
+NOT A FIT
+---------
+  - Free "static site" hosts (GitHub Pages, Netlify, Cloudflare Pages): they can only serve
+    plain pages. This app needs to run and read your bucket, and couldn't have a real sign-in.
+  - Your own PC + a tunnel (e.g. Cloudflare Tunnel): needs installing and running things
+    from the command line, and your PC must be on.
+  - Fly.io, AWS: set up mainly from the command line.
+  - Google Drive / Dropbox on their own: great cloud storage, but they aren't Visual
+    Inventory. (Possible later: the app could show a Drive folder, but that needs exactly
+    the API/OAuth connection you wanted to avoid.)
+
+
+ABOUT THE SIGN-IN (version 3.1.0)
+---------------------------------
+  - One username and one password. You set them in Cloud Run's settings, not in the
+    app's files, so they're never in the zip or on GitHub.
+  - Until you set them (password at least 12 characters), nobody can get in at all.
+  - Signing in gives your browser one cookie, "vi_session", that runs out after 12 hours.
+    It can't be read by the page's scripts, is only sent over https, and isn't sent when
+    another website links to yours. There's nothing else: no tracking, no other cookies.
+  - Wrong passwords are slowed down: 5 wrong tries locks that connection out for 15 minutes,
+    20 wrong tries from anyone locks sign-in for everyone for 15 minutes.
+  - Change the password and everyone is signed out straight away.
+  - Pictures and pages are only sent to signed-in browsers. The only things anyone can see
+    without signing in are the sign-in page, its colours, and your logo/icon.
+  - Use a long password nobody could guess (four or five random words works well), and a
+    password you don't use anywhere else.
+
+
+THE ROAD TO "CLOUD STORAGE + EDITING" (later, one step at a time)
+---------------------------------------------------------------
+  Step 1 (now)  Online, view only, behind the sign-in.             <- version 3.1.0
+  Step 2        Upload files through the app (the bucket becomes writable; still only
+                for the signed-in owner).
+  Step 3        Rename / move / delete in the app, with a "bin" so nothing is lost by mistake.
+  Step 4        Edit pictures and templates in the browser (crop, resize, text on templates),
+                always saving as a new copy first.
+  Each step is a new version you can try before it replaces the last one.

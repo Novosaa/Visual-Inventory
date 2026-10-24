@@ -29,7 +29,7 @@
 
         @if (!Model.IsSetUp)
         {
-            <p class="login-note">Sign-in isn't set up yet, so nobody can get in. The owner needs to set a username and a password (at least @SignIn.MinimumPasswordLength characters) in Cloud Run. See PUT IT ONLINE.txt.</p>
+            <p class="login-note">Sign-in isn't set up yet, so nobody can get in. The owner needs to set a username and a password (at least @VisualInventory.Services.SignIn.MinimumPasswordLength characters) in Cloud Run. See PUT IT ONLINE.txt.</p>
         }
         else
         {

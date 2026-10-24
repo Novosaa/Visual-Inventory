@@ -1,7 +1,10 @@
 PUT VISUAL INVENTORY ONLINE (GOOGLE CLOUD)
 ==========================================
 Everything here is clicking in Google Cloud Console and Cloud Shell Editor.
-Nothing needs typing in a terminal. Parts 1-3 are done once. After that, only Part 4.
+Nothing needs typing in a terminal. Parts 1-4 are done once. After that, only Part 5.
+
+Already put 3.0.3 online? Do Part 2 with the 3.1.0 folder, deploy to the SAME service
+(Part 5), then do Part 3 B step 5 (the sign-in). Until then 3.1.0 lets nobody in.
 
 Google sometimes words buttons slightly differently from what's written here.
 If something doesn't match, tell me what you see on screen.
@@ -20,9 +23,9 @@ PART 1 - MAKE THE BUCKET (where your files go)
 
 PART 2 - PUT THE APP IN CLOUD SHELL EDITOR
 ------------------------------------------
-1. Unzip Visual-Inventory-Web-v3.0.3.zip on your computer.
+1. Unzip Visual-Inventory-Web-v3.1.0.zip on your computer.
 2. Open Cloud Shell Editor.
-3. Drag the folder "Visual Inventory Web 3.0.3" into the file list on the left
+3. Drag the folder "Visual Inventory Web 3.1.0" into the file list on the left
    (or File > Upload and choose the folder).
 4. File > Open Folder > choose that folder.
 5. Optional: open appsettings.json and change ProjectName and Brand
@@ -40,7 +43,8 @@ A. Deploy
      Service name ....... visual-inventory
      Platform ........... Cloud Run (fully managed)
      Region ............. australia-southeast1
-     Who can open it .... allow anyone (unauthenticated), if it asks - so others can use it
+     Who can open it .... allow anyone (unauthenticated), if it asks - this lets the
+                          sign-in page show; the app's own sign-in keeps everyone else out
      Build environment .. Cloud Build
      Builder ............ Docker (it finds the Dockerfile in the folder)
 4. Press Deploy. When it's done it shows the web address.
@@ -54,22 +58,45 @@ B. Connect the bucket READ-ONLY (Cloud Console)
      Bucket ...... the bucket from Part 1
      Read-only ... TICKED   <- this is what makes it impossible for the app to write
 4. In the container's "Volume mounts", mount that volume at:   /library
-5. While you're there (optional, keeps costs capped):
+5. Set the sign-in. Still on the same page, in the container's "Variables & Secrets" tab,
+   "Add variable" twice:
+     Name: VisualInventory__Username    Value: the username you want
+     Name: VisualInventory__Password    Value: your password (at least 12 characters)
+   (Those are TWO underscores in the middle.)
+   Use a long password nobody could guess - four or five random words works well - and
+   one you don't use anywhere else.
+   Extra-careful option: instead of "Add variable" for the password, keep it in
+   Secret Manager (Cloud Console > Security > Secret Manager > Create secret), then use
+   "Reference a secret" here, with the same name VisualInventory__Password and
+   "Exposed as environment variable". If it offers to grant the service account access
+   to the secret, say yes. This way the password isn't shown on the Cloud Run page.
+6. While you're there (optional, keeps costs capped):
      Maximum number of instances: 2
-6. Deploy.
-7. Open the web address. Your categories show.
+7. Deploy.
+8. Open the web address. The sign-in page shows. Sign in: your categories show.
+   If it says "Sign-in isn't set up yet", step 5 is missing or the password is too short.
 
 If it says it can't read the bucket: Cloud Storage > your bucket > Permissions >
 Grant access > add the Cloud Run service account (shown on the service's Security tab)
 with the role "Storage Object Viewer" (view only).
 
 
-PART 4 - EVERY TIME AFTER
+PART 4 - KEEP AN EYE ON COST (once, recommended)
+-------------------------------------------------
+Cloud Console > Billing > Budgets & alerts > Create budget. Set an amount (e.g. $5 a month)
+and keep the email alerts ticked. Google then emails you if it's heading over.
+
+
+PART 5 - EVERY TIME AFTER
 -------------------------
 - New pictures/files: just upload them to the bucket. Press Refresh in the app.
   No deploy needed.
 - Changed the app's files or settings: in Cloud Shell Editor, Command Palette >
-  "Deploy to Cloud Run" > same service > Deploy. The bucket stays connected.
+  "Deploy to Cloud Run" > same service > Deploy. The bucket and the sign-in stay set.
+- Change the password: Cloud Run > visual-inventory > Edit & deploy new revision >
+  Variables & Secrets > change VisualInventory__Password > Deploy. (If you used Secret
+  Manager: add a new version of the secret, then deploy a new revision.)
+  Everyone, including you, is signed out and signs in with the new one.
 
 TO TAKE IT OFFLINE
 - Cloud Console > Cloud Run > visual-inventory > Delete. The bucket and your files stay.

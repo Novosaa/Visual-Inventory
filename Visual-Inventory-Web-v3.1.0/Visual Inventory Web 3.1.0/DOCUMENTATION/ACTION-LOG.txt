@@ -1,5 +1,30 @@
 VISUAL INVENTORY (WEB) - ACTION LOG
 
+web 3.1.0 - 24 Oct 2026 - sign-in page
+Made from web 3.0.3. Still view only. Desktop app and web 3.0.3 files were not changed.
+  - New sign-in page (/login). One username + password, read from Cloud Run settings
+    (VisualInventory__Username / VisualInventory__Password). Not set, or password under
+    12 characters: nobody can sign in (fails closed).
+  - Signed in = one cookie "vi_session": expiry time + HMAC-SHA256 signature keyed from the
+    password. HttpOnly, Secure, SameSite=Strict, 12 hours. Works across restarts and more
+    than one instance. Changing the password signs everyone out.
+  - Username and password compared in constant time.
+  - Wrong tries: 1 second delay; 5 per connection or 20 overall in 15 minutes = locked 15 minutes.
+  - Not signed in: "/" goes to the sign-in page; pictures and everything else refused (401).
+    Only the sign-in page, site.css, site.js, icons and logo are shown before sign-in.
+  - POST now allowed only for /login and /logout, and refused (403) if sent from another
+    website (Origin / Sec-Fetch-Site checks). Everything else still GET/HEAD only.
+  - Pages sent with Cache-Control: no-store; pictures "private".
+  - site.js now sends the sign-in cookie with its own page requests (same site only).
+  - Sign out button at the bottom of the sidebar.
+  - New: HOSTING OPTIONS.txt. PUT IT ONLINE.txt: sign-in step, budget alert step.
+Checked: by GitHub (".github/workflows/web-check.yml" in the repository), which builds the
+  Dockerfile and runs the app on a test Library mounted read-only, then checks every rule
+  above (see the check's results on GitHub).
+Not checked: Cloud Run itself (no access to Google from here) and how the sign-in page looks
+  on your screen.
+
+
 web 3.0.3 - 22 Oct 2026 - first web version
 Made from the desktop 3.0.3 source (view only). Desktop app files were not changed.
 
