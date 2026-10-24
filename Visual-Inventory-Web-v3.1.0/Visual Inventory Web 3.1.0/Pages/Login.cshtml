@@ -1,0 +1,52 @@
+@page "/login"
+@model LoginModel
+@{
+    var s = Model.Settings;
+}
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Sign in — @s.ProjectName</title>
+    <link rel="icon" href="@(s.IsSideEye ? "/favicon-sideeye.ico" : "/favicon.ico")" />
+    <link rel="stylesheet" href="/site.css?v=3.1.0" />
+</head>
+<body class="login-page">
+<main class="login">
+    <div class="card">
+        @if (s.IsSideEye)
+        {
+            <img class="login-logo" src="/sideeye-logo.png" alt="Side Eye Series" />
+        }
+        else
+        {
+            <div class="pink-bar"></div>
+        }
+        <h1>@s.ProjectName</h1>
+        <div class="muted small-12">Visual Inventory · v3.1.0 · view only</div>
+
+        @if (!Model.IsSetUp)
+        {
+            <p class="login-note">Sign-in isn't set up yet, so nobody can get in. The owner needs to set a username and a password (at least @SignIn.MinimumPasswordLength characters) in Cloud Run. See PUT IT ONLINE.txt.</p>
+        }
+        else
+        {
+            if (Model.Message is not null)
+            {
+                <p class="login-note" role="alert">@Model.Message</p>
+            }
+            <!-- Sends only to this same site. -->
+            <form method="post" action="/login" class="login-form" asp-antiforgery="false">
+                <label for="username">Username</label>
+                <input id="username" name="Username" type="text" value="@Model.Username" autocomplete="username" autocapitalize="none" spellcheck="false" required autofocus />
+                <label for="password">Password</label>
+                <input id="password" name="Password" type="password" autocomplete="current-password" required />
+                <button type="submit" class="sign-in">Sign in</button>
+            </form>
+        }
+    </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,47 @@
+VISUAL INVENTORY (WEB) 3.0.3 - VIEW ONLY
+========================================
+
+This is Visual Inventory 3.0.3 as a website, written in the same C# (.NET 10).
+It looks and works like the desktop app: the sidebar of categories, the Overview,
+the tile grid, the details panel (picture, type, size, dimensions, dates, location),
+search as you type, Hide details, drag to resize details, Ctrl+F, Refresh.
+
+The folder rules are the same as the desktop app:
+  - Library = your storage bucket.
+  - Each folder in the bucket is a category.
+  - Each file or folder inside a category is a tile.
+  - Loose files at the top of the bucket show under "Unsorted".
+  - Names starting with a dot, desktop.ini and Thumbs.db are skipped.
+
+WHAT IT CAN'T DO (on purpose)
+  - It never uploads, writes, moves, renames or deletes anything.
+  - The bucket is connected to it READ-ONLY, so even Google won't let it write there.
+  - It only ever sends out picture files (jpg, jpeg, png, bmp, gif) from inside the
+    bucket, for the tiles. Other files are listed but never sent to anyone.
+  - Anything other than looking at a page is refused.
+  - No sign-in, no cookies, no tracking, nothing about visitors is kept.
+  - No add-on packages: only what comes with .NET itself.
+
+IMPORTANT: anyone with the web address can look at what's in the bucket.
+Only put COPIES in the bucket - things you're happy for others to see.
+
+THE APP'S OWN SETTINGS: appsettings.json
+  "ProjectName": the name at the top of the sidebar.   e.g. "Side Eye Series"
+  "Brand":       "Generic" = pink badge.  "SideEye" = your Side Eye Series logo.
+  "LibraryPath": leave as "/library" (where the bucket is connected).
+  "TimeZone":    leave as "Australia/Sydney".
+  Change a value, save, press Deploy again.
+
+To put it online, read PUT IT ONLINE.txt.
+
+WHAT'S IN THE FOLDER
+  Dockerfile               how Google builds the app (Microsoft's official .NET 10 images)
+  VisualInventoryWeb.csproj the project file
+  Program.cs               starts the website, refuses anything but looking, safety rules
+  appsettings.json         the app's settings (above)
+  Pages/Index.cshtml       the page (sidebar, Overview, tiles, details)
+  Pages/Index.cshtml.cs    what the page shows
+  Services/                reading the Library (same code as the desktop app)
+  Models/                  categories and tiles
+  wwwroot/                 look (site.css), small extras (site.js), icons, Side Eye logo
+  DOCUMENTATION/ACTION-LOG.txt  what was done and checked

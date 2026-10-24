@@ -1,0 +1,118 @@
+# Builds Visual Inventory (web) the same way Google Cloud does (with its Dockerfile), runs it
+# on a throwaway test Library, and checks the sign-in and the "view only" rules.
+# Runs by itself on GitHub's machines every time the web app changes. Nothing to do by hand.
+name: Web app check
+
+on:
+  push:
+    paths:
+      - "Visual-Inventory-Web-v3.1.0/**"
+      - ".github/workflows/web-check.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      APP: "Visual-Inventory-Web-v3.1.0/Visual Inventory Web 3.1.0"
+      USER_NAME: tester
+      PASSWORD: correct-horse-battery-staple
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build (same Dockerfile Google uses)
+        run: docker build -t visual-inventory "$APP"
+
+      - name: Make a test Library
+        run: |
+          mkdir -p lib/Posters lib/Empty
+          # 1x1 PNG
+          printf '\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\rIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\x00\x05\x18\xd8N\x00\x00\x00\x00IEND\xaeB`\x82' > lib/Posters/one.png
+          echo "not a picture" > lib/Posters/notes.pdf
+          echo "secret" > lib/.hidden.png
+          chmod -R a+rX lib
+
+      - name: Start it (Library read-only, like the bucket)
+        run: |
+          docker run -d --name vi -p 8080:8080 -v "$PWD/lib:/library:ro" \
+            -e VisualInventory__Username="$USER_NAME" -e VisualInventory__Password="$PASSWORD" visual-inventory
+          docker run -d --name vi-unset -p 8081:8080 -v "$PWD/lib:/library:ro" visual-inventory
+          for i in $(seq 1 30); do curl -s -o /dev/null http://localhost:8080/login && curl -s -o /dev/null http://localhost:8081/login && break; sleep 1; done
+
+      - name: Check sign-in and view-only rules
+        run: |
+          set -u
+          B=http://localhost:8080
+          fail=0
+          expect() { # expect <what> <wanted> <got>
+            if [ "$2" = "$3" ]; then echo "ok   $1 ($3)"; else echo "FAIL $1: wanted $2, got $3"; fail=1; fi
+          }
+          code() { curl -s -o /dev/null -w '%{http_code}' "$@"; }
+
+          # Not signed in: nothing to see.
+          expect "overview redirects to sign-in"       302 "$(code $B/)"
+          expect "redirect goes to /login"             "$B/login" "$(curl -s -o /dev/null -w '%{redirect_url}' $B/)"
+          expect "category redirects to sign-in"       302 "$(code "$B/?c=Posters")"
+          expect "picture refused"                     401 "$(code "$B/picture?path=Posters/one.png")"
+          expect "sign-in page shows"                  200 "$(code $B/login)"
+          expect "style sheet shows"                   200 "$(code $B/site.css)"
+
+          # Wrong password.
+          expect "wrong password refused"              401 "$(code -d "Username=$USER_NAME&Password=wrong-password-123" $B/login)"
+          expect "wrong username refused"              401 "$(code -d "Username=nobody&Password=$PASSWORD" $B/login)"
+
+          # Sent from another website: refused even with the right password.
+          expect "other-site form refused"             403 "$(code -H 'Origin: https://evil.example' -d "Username=$USER_NAME&Password=$PASSWORD" $B/login)"
+          expect "cross-site fetch refused"            403 "$(code -H 'Sec-Fetch-Site: cross-site' -d "Username=$USER_NAME&Password=$PASSWORD" $B/login)"
+
+          # Right password.
+          headers=$(curl -s -D - -o /dev/null -H "Origin: $B" -d "Username=$USER_NAME&Password=$PASSWORD" $B/login)
+          echo "$headers" | tr -d '\r' | grep -i '^set-cookie'
+          expect "sign-in redirects to overview"       1 "$(echo "$headers" | grep -c '^HTTP/1.1 302')"
+          cookie=$(echo "$headers" | tr -d '\r' | grep -i '^set-cookie: vi_session=' | sed 's/^[Ss]et-[Cc]ookie: //; s/;.*//')
+          flags=$(echo "$headers" | tr -d '\r' | grep -i '^set-cookie: vi_session=' | tr 'A-Z' 'a-z')
+          expect "cookie is httponly"                  1 "$(echo "$flags" | grep -c httponly)"
+          expect "cookie is secure"                    1 "$(echo "$flags" | grep -c secure)"
+          expect "cookie is samesite=strict"           1 "$(echo "$flags" | grep -c 'samesite=strict')"
+          expect "only one cookie given"               1 "$(echo "$headers" | grep -ci '^set-cookie')"
+
+          # Signed in.
+          expect "overview shows"                      200 "$(code -b "$cookie" $B/)"
+          expect "overview lists category"             1 "$(curl -s -b "$cookie" $B/ | grep -c '>Posters</a>')"
+          expect "category shows"                      200 "$(code -b "$cookie" "$B/?c=Posters")"
+          expect "picture shows"                       200 "$(code -b "$cookie" "$B/picture?path=Posters/one.png")"
+          expect "pdf never sent"                      404 "$(code -b "$cookie" "$B/picture?path=Posters/notes.pdf")"
+          expect "hidden file never sent"              404 "$(code -b "$cookie" "$B/picture?path=.hidden.png")"
+          expect "outside Library refused"             404 "$(code -b "$cookie" "$B/picture?path=../../etc/passwd")"
+          expect "pages not kept by browser"           1 "$(curl -s -D - -o /dev/null -b "$cookie" $B/ | grep -ci '^cache-control: no-store')"
+          expect "tampered cookie refused"             302 "$(code -b "${cookie}x" $B/)"
+          expect "made-up cookie refused"              302 "$(code -b "vi_session=9999999999.abc" $B/)"
+
+          # Still view only, signed in or not.
+          expect "POST to page refused"                405 "$(code -b "$cookie" -X POST $B/)"
+          expect "PUT refused"                         405 "$(code -b "$cookie" -X PUT "$B/picture?path=Posters/one.png")"
+          expect "DELETE refused"                      405 "$(code -b "$cookie" -X DELETE "$B/picture?path=Posters/one.png")"
+
+          # Sign out.
+          expect "sign out"                            302 "$(code -b "$cookie" -H "Origin: $B" -X POST $B/logout)"
+
+          # Too many wrong tries: locked out, even with the right password.
+          for i in 1 2 3 4 5; do code -d "Username=x&Password=wrong-password-123" $B/login > /dev/null; done
+          expect "locked out after 5 wrong tries"      429 "$(code -d "Username=$USER_NAME&Password=$PASSWORD" $B/login)"
+
+          # No password set: nobody gets in.
+          U=http://localhost:8081
+          expect "unset: overview redirects"           302 "$(code $U/)"
+          expect "unset: page says not set up"         1 "$(curl -s $U/login | grep -c "isn't set up yet")"
+          expect "unset: sign-in refused"              503 "$(code -d "Username=&Password=" $U/login)"
+
+          # The test Library is exactly as it was.
+          expect "Library unchanged"                   "notes.pdf one.png" "$(ls lib/Posters | tr '\n' ' ' | sed 's/ $//')"
+          exit $fail
+
+      - name: App log
+        if: always()
+        run: docker logs vi; docker logs vi-unset

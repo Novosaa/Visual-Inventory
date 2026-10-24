@@ -1,0 +1,75 @@
+PUT VISUAL INVENTORY ONLINE (GOOGLE CLOUD)
+==========================================
+Everything here is clicking in Google Cloud Console and Cloud Shell Editor.
+Nothing needs typing in a terminal. Parts 1-3 are done once. After that, only Part 4.
+
+Google sometimes words buttons slightly differently from what's written here.
+If something doesn't match, tell me what you see on screen.
+
+
+PART 1 - MAKE THE BUCKET (where your files go)
+----------------------------------------------
+1. Cloud Console > Cloud Storage > Buckets > Create.
+2. Name: anything, e.g.  visual-inventory-library
+3. Location: Region > australia-southeast1 (Sydney).
+4. Leave "Prevent public access" ON. (The app reads it; the public can't.)
+5. Create.
+6. Open the bucket. Make folders (your categories) with "Create folder",
+   or drag folders in with "Upload folder". Put COPIES in, not originals.
+
+
+PART 2 - PUT THE APP IN CLOUD SHELL EDITOR
+------------------------------------------
+1. Unzip Visual-Inventory-Web-v3.0.3.zip on your computer.
+2. Open Cloud Shell Editor.
+3. Drag the folder "Visual Inventory Web 3.0.3" into the file list on the left
+   (or File > Upload and choose the folder).
+4. File > Open Folder > choose that folder.
+5. Optional: open appsettings.json and change ProjectName and Brand
+   ("SideEye" shows your Side Eye Series logo). Save.
+
+
+PART 3 - FIRST DEPLOY, THEN CONNECT THE BUCKET (once)
+-----------------------------------------------------
+A. Deploy
+1. Open the Command Palette: View > Command Palette (or Ctrl+Shift+P).
+2. Choose "Deploy to Cloud Run". The deploy panel opens.
+3. Fill in:
+     Project ............ your project
+     Service ............ Create a new service
+     Service name ....... visual-inventory
+     Platform ........... Cloud Run (fully managed)
+     Region ............. australia-southeast1
+     Who can open it .... allow anyone (unauthenticated), if it asks - so others can use it
+     Build environment .. Cloud Build
+     Builder ............ Docker (it finds the Dockerfile in the folder)
+4. Press Deploy. When it's done it shows the web address.
+   Opening it now shows "No Library folder found" - that's right, Part B fixes it.
+
+B. Connect the bucket READ-ONLY (Cloud Console)
+1. Cloud Console > Cloud Run > click visual-inventory.
+2. "Edit & deploy new revision".
+3. Volumes > Add / Mount volume:
+     Type ........ Cloud Storage bucket
+     Bucket ...... the bucket from Part 1
+     Read-only ... TICKED   <- this is what makes it impossible for the app to write
+4. In the container's "Volume mounts", mount that volume at:   /library
+5. While you're there (optional, keeps costs capped):
+     Maximum number of instances: 2
+6. Deploy.
+7. Open the web address. Your categories show.
+
+If it says it can't read the bucket: Cloud Storage > your bucket > Permissions >
+Grant access > add the Cloud Run service account (shown on the service's Security tab)
+with the role "Storage Object Viewer" (view only).
+
+
+PART 4 - EVERY TIME AFTER
+-------------------------
+- New pictures/files: just upload them to the bucket. Press Refresh in the app.
+  No deploy needed.
+- Changed the app's files or settings: in Cloud Shell Editor, Command Palette >
+  "Deploy to Cloud Run" > same service > Deploy. The bucket stays connected.
+
+TO TAKE IT OFFLINE
+- Cloud Console > Cloud Run > visual-inventory > Delete. The bucket and your files stay.
